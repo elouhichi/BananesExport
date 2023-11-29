@@ -15,5 +15,6 @@ public interface IDestinataireService {
 
      List<Destinataire> getAllDestinataires();
 
+     Destinataire finDestinataireById(Long id);
 
 }

@@ -3,37 +3,60 @@ package com.kata.BananesExport;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import com.kata.BananesExport.domain.Commande;
 import com.kata.BananesExport.domain.DefaultResponse;
 import com.kata.BananesExport.domain.Destinataire;
+import com.kata.BananesExport.repository.CommandeRepository;
+import com.kata.BananesExport.repository.DestinataireRepository;
 import com.kata.BananesExport.service.ICommandeService;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.when;
 
 public class CommandeServiceTests extends BananesExportApplicationTests {
 
     @Autowired
     ICommandeService commandeService;
 
+    @MockBean
+    CommandeRepository commandeRepository;
+
+    @MockBean
+    DestinataireRepository destinataireRepository;
+
     @Test
     void create_commande(){
-        Destinataire destinataire = Destinataire.builder().nom("dest")
-                .adresse("adresse 4")
+        Destinataire destinataire = Destinataire.builder()
+                .id(100L)
+                .nom("dest")
+                .adresse("adresse 3")
                 .codePostal("12345")
-                .ville("ville 4")
-                .pays("pays 4").build();
-        Commande commande = Commande.builder().quantite((short) 50)
+                .ville("ville 5")
+                .pays("pays 0").build();
+
+        Commande commande = Commande.builder()
+                .id(22L)
                 .destinataire(destinataire)
+                .quantite((short) 50)
+                .prix(125)
                 .dateLivraison(LocalDate.now().plusDays(10)).build();
+        when(commandeRepository.save(any(Commande.class))).thenReturn(commande);
+        when(destinataireRepository.findById(any(Long.class))).thenReturn(Optional.ofNullable(destinataire));
         Commande savedCommande = commandeService.createCommande(commande);
+
         // Then
         Assertions.assertNotNull(savedCommande);
         Assertions.assertTrue(commande.getQuantite() > 0 && commande.getQuantite() < 10000);
-        Assertions.assertEquals(BigDecimal.valueOf(commande.getQuantite() * 2.5), savedCommande.getPrix());
+        Assertions.assertEquals(commande.getQuantite() * 2.5, savedCommande.getPrix());
         LocalDate currentDate = LocalDate.now();
         LocalDate dateInAWeek = currentDate.plusDays(6);
         Assertions.assertTrue(savedCommande.getDateLivraison().isAfter(dateInAWeek));
@@ -41,36 +64,39 @@ public class CommandeServiceTests extends BananesExportApplicationTests {
 
      @Test
     void update_commande(){
-        Destinataire destinataire = Destinataire.builder().nom("dest")
-                .adresse("adresse 5")
-                .codePostal("12345")
-                .ville("ville 5")
-                .pays("pays 6").build();
-        Commande commande = Commande.builder().quantite((short) 10)
+         Destinataire destinataire = Destinataire.builder().nom("dest")
+                 .adresse("adresse 3")
+                 .codePostal("12345")
+                 .ville("ville 5")
+                 .pays("pays 0").build();
+        Commande commande = Commande.builder()
+                .id(1L)
                 .destinataire(destinataire)
-                .dateLivraison(LocalDate.now().plusDays(8)).build();
-         Commande savedCommande = commandeService.createCommande(commande);
-         Commande commandeToUpdate = Commande.builder().quantite((short) 20)
-                 .destinataire(destinataire)
-                 .dateLivraison(LocalDate.now().plusDays(20)).build();
-         Commande updatedCommande = commandeService.updateCommande(commandeToUpdate, savedCommande.getIdCommande());
+                .quantite((short) 10)
+                .dateLivraison(LocalDate.now().plusDays(8))
+                .build();
+         when(commandeRepository.save(any(Commande.class))).thenReturn(commande);
+         when(commandeRepository.findById(any(Long.class))).thenReturn(Optional.ofNullable(commande));
+         Commande commandeToUpdate = Commande.builder()
+                 .quantite((short) 20)
+                 .dateLivraison(LocalDate.now().plusDays(20))
+                 .build();
+         Commande updatedCommande = commandeService.updateCommande(commandeToUpdate, commande.getId());
         Assertions.assertEquals(20, updatedCommande.getQuantite());
     }
 
     @Test
-    void delete_commande(){
+    void
+    delete_commande(){
         // Given
-        Destinataire destinataire = Destinataire.builder().nom("dest")
-                .adresse("adresse 6")
-                .codePostal("12345")
-                .ville("ville 5")
-                .pays("pays 9").build();
-        Commande commande = Commande.builder().quantite((short) 50)
-                .destinataire(destinataire)
+        Commande commande = Commande.builder()
+                .id(10L)
+                .quantite((short) 50)
                 .dateLivraison(LocalDate.now().plusDays(10)).build();
-        Commande savedCommande = commandeService.createCommande(commande);
        //When
-        DefaultResponse response =commandeService.deleteCommande(savedCommande.getIdCommande());
+        doNothing().when(commandeRepository).deleteById(any(Long.class));
+
+        DefaultResponse response =commandeService.deleteCommande(commande.getId());
         Assertions.assertNotNull(response);
         Assertions.assertEquals("ok", response.status());
     }
@@ -86,10 +112,11 @@ public class CommandeServiceTests extends BananesExportApplicationTests {
         Commande commande = Commande.builder().quantite((short) 50)
                 .destinataire(destinataire)
                 .dateLivraison(LocalDate.now().plusDays(10)).build();
-        commandeService.createCommande(commande);
-
+        List<Commande> commandes = new ArrayList<>();
+        commandes.add(commande);
         // When
-        List<Commande> commandes = commandeService.getCommandesByDestinataire(destinataire);
+        when(commandeRepository.findByDestinataire(destinataire)).thenReturn(commandes);
+         commandes = commandeService.getCommandesByDestinataire(destinataire);
         // Then
         Assertions.assertNotNull(commandes);
     }

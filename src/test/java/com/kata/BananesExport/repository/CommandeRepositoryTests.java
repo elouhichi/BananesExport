@@ -21,6 +21,9 @@ public class CommandeRepositoryTests {
         @Autowired
         CommandeRepository commandeRepository;
 
+        @Autowired
+        DestinataireRepository destinataireRepository;
+
         @Test
         void create_commande(){
 
@@ -85,7 +88,7 @@ public class CommandeRepositoryTests {
         }
 
         @Test
-        void get_all_destinataire(){
+        void get_all_commande_by_destinataire(){
             // Given
             // Ajouter plusieurs destinataires
             Destinataire destinataire = Destinataire.builder().nom("dest5")
@@ -93,6 +96,7 @@ public class CommandeRepositoryTests {
                     .codePostal("67891")
                     .ville("ville5")
                     .pays("pays5").build();
+            destinataireRepository.save(destinataire);
             Commande commande1 = Commande.builder().quantite((short) 50)
                     .destinataire(destinataire)
                     .dateLivraison(LocalDate.now()).build();
@@ -105,7 +109,7 @@ public class CommandeRepositoryTests {
             commandeRepository.save(commande2);
 
             // When
-            List<Commande> commandes = (List<Commande>) commandeRepository.findAll();
+            List<Commande> commandes = (List<Commande>) commandeRepository.findByDestinataire(destinataire);
             // Then
             Assertions.assertNotNull(commandes);
             Assertions.assertEquals(2, commandes.size());

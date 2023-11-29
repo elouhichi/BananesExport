@@ -27,7 +27,6 @@ public class Destinataire {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private Long idDestinataire;
     private String nom;
     private String adresse;
     private String codePostal;

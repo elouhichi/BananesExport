@@ -8,7 +8,7 @@ import java.util.List;
 
 public interface ICommandeService {
 
-    Commande createCommande(Commande commandeService);
+    Commande createCommande(Commande commande);
 
     Commande updateCommande(Commande commande, Long id);
 
